@@ -46,8 +46,18 @@ record NatTrans (X : (Cat, Cat)) (F, G :Functor X) where
 comp (snd X) (f_obj F  x) (f_obj G x) (f_obj G y) (eta x) (arr G x y f) = 
 comp (snd X) (f_obj F x) (f_obj F y) (f_obj G y) (arr F x y f) (eta y)
  
-  
 
+   
+NatId_eta: (X : (Cat,Cat)) -> (F : Functor X) -> (x: obj (fst X)) -> hom (snd X) ((f_obj F x),(f_obj F x))
+
+NatId_eta c f x = id (snd c) (f_obj f x)
+
+NatId_comp:  (X : (Cat,Cat)) -> (F : Functor X) -> ( x, y : obj (fst X)) -> ( f : hom (fst X) (x,y)) ->
+comp (snd X) (f_obj F  x) (f_obj F x) (f_obj F y) (NatId_eta X F x) (arr F x y f) = comp (snd X) (f_obj F x) (f_obj F y) (f_obj F y) (arr F x y f) (NatId_eta X F y)
+NatId_comp c fu x y f = let aux = id_ax (snd c) (f_obj fu x) (f_obj fu y) (arr fu x y f) in trans (fst aux) (sym (snd aux))
+
+natId : (X : (Cat,Cat)) -> (F: Functor X) -> NatTrans X F F
+natId x f = MkNatTrans  (NatId_eta x f) (NatId_comp x f)
 
 
 
