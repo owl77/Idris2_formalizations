@@ -19,5 +19,6 @@ in which we wish to prove that any two terminal objects in a category are isomor
 5.   t a   :  exists (g : hom c(a,a)), forall (h : hom c(a,a)), h = g   Inst 4,2 
 6.  snd (ta) :  forall (h : hom c (a,a)), h = fst (ta)           Sigma type stuff
 7.  id c a : hom c (a,a)              By def.
-8  (snd (ta)) (id c a) :  id c a = fst (ta)  Inst 6,7  QED
+8  (snd (ta)) (id c a) :  id c a = fst (ta)  Inst 6,7
+9 \(c : Cat)(a : obj c)(t : terminal ca),  (snd (ta)) (id c a) : (c: Cat) -> (a : obj c) -> (t : terminal c a) -> h = fst (ta)  QED
 
