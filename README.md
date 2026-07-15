@@ -1,7 +1,7 @@
 # Idris2_formalizations
 Investigations into the Idris2 proof assistant and some formalizations
 
-
+ 
 Our dream is to devise a proof assistant which combines the best aspects of Coq/Rocq and Agda.  The idea is to have a core minimalist version of dependent type theory in which the construction of proof-terms be done in a natural deduction style which corresponds closely to actual mathematical practice (we are taking the proofs of category theory as our guide - so our conclusions might not hold in general).  Thus our philosophy is different at once from the top-down method of constructing proofs in Coq/Rocq and from the complicated emacs interface of Agda and its system of inference.
 
 Dependent type theory - extensions of the type theories such as those of Ocaml and Haskell - seem to us to be philosophically, computationally, logically and practically the best foundation of mathematics. The Idris 2 proof assistant - which is versatile and elegant, a kind of idealized version of Agda - seems to be the most promising basis for achieving our goal.  The convenient interface for constructing of proof terms in Idris 2 is a good basis for investigating the possibility of our natural deduction project. Idris 2 with its REPL feels like a enhanced version of Ocaml or Haskell (upon which it is based). It is however not so easy to install (we managed to do it after some difficulties on an Ubuntu virtual machine) and at the moment one has to use rlwrap to get the command history in the REPL.
