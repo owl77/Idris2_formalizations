@@ -18,7 +18,7 @@ set_id t = \x => x
 set_comp : (x,y,z :Type) -> (f : set_hom (x,y)) -> (g : set_hom (y,z)) -> set_hom (x,z)
 set_comp x y z f g a = g (f a)
 set_id_ax: (x, y : Type) -> (f : set_hom (x,y)) -> ((set_comp x x y (set_id x) f) =  f, (set_comp x y y f (set_id y)) = f )
-set_id_ax x y f = (Refl, Refl)
+-- to be continued 
 
 terminal : (c : Cat) -> (t : obj c) -> Type 
 terminal c t =  (x: obj c) -> (g: hom c (x,t) ** (f : hom c (x,t)) -> f = g)
