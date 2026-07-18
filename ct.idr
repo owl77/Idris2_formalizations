@@ -2,10 +2,10 @@
 
 import Prelude
 
--- In this module we define general categories, the category of "sets", terminal objects, functors and natural transformations, 
+-- In this module we define general categories, opposite categories, the category of "sets", terminal objects, functors and natural transformations, 
 -- point out the necessity of extensionality to define the category of sets and the necessity of postulating natural identity conditions for
 -- natural transformations. The main result is to show that functors between categories A and B and their natural transformations form a category.
--- As a result we can define the category of presheaves over a given category A.
+-- As a result we can define the category of presheaves over a given category A and the yoneda embedding. 
 
 record Cat where
  constructor MkCat
@@ -16,6 +16,11 @@ record Cat where
  id_ax : (x , y : obj) -> (f : hom (x,y)) -> ((comp x x y (id x) f) =  f, (comp x y y f (id y)) = f )
  ass : (x , y, z, w : obj) -> ( f: hom (x,y)) -> (g : hom (y,z)) -> (h : hom (z,w)) -> 
 comp x z w (comp x y z f g) h = comp x y w f (comp y z w g h)
+
+op_cat : Cat -> Cat
+op_cat c = MkCat (obj c) (\obpair => hom c (snd obpair, fst obpair)) (id c) (\x,y,z => \f,g => comp c z y x g f)
+ (\x,y => (\f => (snd(id_ax c y x f), fst(id_ax c y x f) ))) (\x,y,z,w =>( \f,g,h => sym (ass c w z y x h g f)))  
+
 
 -- the category of sets is the category of types + extensionality. 
 
@@ -55,6 +60,8 @@ set_ass x y z w f g h = funExt x w (\a => (set_comp x z w (set_comp x y z f g) h
 set: Cat
 set = MkCat Type set_hom set_id set_comp set_id_ax set_ass
 
+setOp : Cat
+setOp = op_cat set
 
 
 terminal : (c : Cat) -> (t : obj c) -> Type 
@@ -172,4 +179,35 @@ functorCat: (X : (Cat,Cat)) -> Cat
 functorCat cs = MkCat (Functor cs)(\p => NatTrans cs (fst p) (snd p)) (natId cs)(natComp cs)(natCompId cs) (natAss cs)
 
 presheaves : (X : Cat) -> Cat
-presheaves c = functorCat (c, set)
+presheaves c = functorCat (c, setOp)
+
+-- the yoneda functor C_b -> Set^op,  a -> set_hom (a,b)
+
+yoneda_obj : (X : Cat) -> (b : obj X) -> (a : obj X) -> Type
+yoneda_obj c b a = hom c (a,b)
+
+yoneda_arr : (X : Cat ) -> (b : obj X) -> (x,y : obj X) -> ( f: hom X (x,y)) -> set_hom (yoneda_obj X b y, yoneda_obj X b x)
+yoneda_arr c b x y f = \g => comp c x y b f g
+ 
+pre_yoneda_id : (X : Cat ) -> ( b : obj X) -> ( x: obj X) -> (f : hom X (x,b)) ->
+ (yoneda_arr X b x x (id X x)) f = set_id (yoneda_obj X b x) f
+
+pre_yoneda_id c b x f = rewrite fst(id_ax c x b f) in Refl
+
+yoneda_id : (X : Cat) -> ( b : obj X) -> (x : obj X) -> (yoneda_arr X b x x (id X x))  = set_id (yoneda_obj X b x) 
+yoneda_id c b x = funExt (yoneda_obj c b x) (yoneda_obj c b x) (yoneda_arr c b x x (id c x)) (set_id (yoneda_obj c b x)) (pre_yoneda_id c b x)
+
+pre_yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (x,y)) -> (g: hom X (y,z)) -> (j : hom X (z,b)) ->
+  (yoneda_arr X b x z (comp X x y z f g)) j =  (set_comp (yoneda_obj X b z) (yoneda_obj X b y)(yoneda_obj X b x) (yoneda_arr X b y z g) (yoneda_arr X b x y f)) j
+ 
+pre_yoneda_comp c b x y z f g j = rewrite  (ass c x y z b f g j) in Refl
+
+yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (x,y)) -> (g: hom X (y,z)) -> 
+ (yoneda_arr X b x z (comp X x y z f g)) =  (set_comp (yoneda_obj X b z) (yoneda_obj X b y)(yoneda_obj X b x) (yoneda_arr X b y z g) (yoneda_arr X b x y f))
+
+yoneda_comp c b x y z f g = funExt (yoneda_obj c b z ) (yoneda_obj c b x ) (yoneda_arr c b x z (comp c x y z f g))  (set_comp (yoneda_obj c b z) (yoneda_obj c b y)(yoneda_obj c b x) (yoneda_arr c b y z g) (yoneda_arr c b x y f))(pre_yoneda_comp c b x y z f g)
+
+yoneda: (X : Cat) -> (b : obj X) -> Functor (X, Main.setOp)
+yoneda c b = MkFunctor (yoneda_obj c b) (yoneda_arr c b) (yoneda_id c b) (yoneda_comp c b)
+
+-- this is part of the construction of the yoneda embedding y : C -> Psh(C) 
