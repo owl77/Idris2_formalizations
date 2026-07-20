@@ -8,7 +8,9 @@ import Data.Fin
 -- point out the necessity of extensionality to define the category of sets and the need to postulate  identity conditions for
 -- natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define the composition of functors, the identity functors
-and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
+-- and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
+
+-- We believe that Iris 2 is the best dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
 record Cat where
  constructor MkCat
