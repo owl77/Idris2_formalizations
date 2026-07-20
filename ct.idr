@@ -1,6 +1,8 @@
 
 
 import Prelude
+import Data.Singleton
+import Data.Fin
 
 -- In this module we define general categories, opposite categories, the category of "sets", terminal objects, functors and natural transformations, 
 -- point out the necessity of extensionality to define the category of sets and the necessity of postulating natural identity conditions for
@@ -21,6 +23,55 @@ op_cat : Cat -> Cat
 op_cat c = MkCat (obj c) (\obpair => hom c (snd obpair, fst obpair)) (id c) (\x,y,z => \f,g => comp c z y x g f)
  (\x,y => (\f => (snd(id_ax c y x f), fst(id_ax c y x f) ))) (\x,y,z,w =>( \f,g,h => sym (ass c w z y x h g f)))  
 
+-- the empty category
+
+empty_cat : Cat
+empty_cat = MkCat Void (\x => Void) (\x => x) (\x,y,z,f,g => absurd f) (\x,y,f => (absurd f, absurd f)) (\x,y,z,w,f,g,h => absurd f)
+
+-- singleton category
+star: Type
+star = Singleton 0
+
+-- we need this obvious property of singleton and equality types.
+
+singleton_id : (f : Singleton x ) -> f = Val x
+singleton_id (Val x) = Refl
+
+singleton_cat : Cat
+singleton_cat = MkCat (Singleton 0) (\x => (Singleton 1)) (\x => Val 1) (\x,y,z,f,g => Val 1) (\x,y,f:Singleton 1 => rewrite (singleton_id f) in (Refl, Refl)) (\x,y,z,w,f,g,h => Refl)
+
+-- category with 2 objects and no non-trivial morphisms
+
+-- data Fin : Nat -> Type where
+--   FZ : Fin (S k)
+--   FS : Fin k -> Fin (S k)
+
+two_hom: (Fin 2, Fin 2) -> Type
+
+two_hom (FZ, FZ) = Singleton 0
+two_hom (FS FZ, FS FZ) = Singleton 0
+two_hom (_,_) = Void
+
+two_id : (x: Fin 2) -> two_hom (x,x)
+two_id FZ = Val 0
+two_id (FS FZ) = Val 0
+
+two_comp : (x,y,z : Fin 2) -> (f : two_hom(x,y)) -> (g : two_hom(y,z)) -> two_hom(x,z)
+two_comp FZ FZ FZ f g = Val 0
+two_comp (FS FZ) (FS FZ) (FS FZ) f g = Val 0
+
+two_ass : (x,y,z,w : Fin 2) -> (f : two_hom(x,y)) -> (g : two_hom (y,z)) -> (h : two_hom (z,w)) -> 
+ two_comp x z w (two_comp x y z f g) h = two_comp x y w f (two_comp y z w g h)
+
+two_ass FZ FZ FZ FZ _ _ _ = Refl
+two_ass (FS FZ) (FS FZ) (FS FZ) (FS FZ)  _ _ _ = Refl
+
+two_id_ax : (x,y : Fin 2) -> (f : two_hom(x,y)) -> ((two_comp x x y (two_id x) f) =  f, (two_comp x y y f (two_id y)) = f )
+
+two_id_ax FZ FZ (Val 0) = (Refl, Refl)
+two_id_ax (FS FZ) (FS FZ) (Val 0)  = (Refl, Refl)
+
+two_cat = MkCat (Fin 2) (two_hom) (two_id) (two_comp) (two_id_ax) (two_ass)
 
 -- the category of sets is the category of types + extensionality. 
 
@@ -60,8 +111,8 @@ set_ass x y z w f g h = funExt x w (\a => (set_comp x z w (set_comp x y z f g) h
 set: Cat
 set = MkCat Type set_hom set_id set_comp set_id_ax set_ass
 
-setOp : Cat
-setOp = op_cat set
+-- setOp : Cat
+-- setOp = op_cat set
 
 
 terminal : (c : Cat) -> (t : obj c) -> Type 
@@ -83,7 +134,6 @@ lemma2 c a t f =  trans   ( (snd (t a)) f)   (sym  (lemma1 c a t) )
 
 terminal_iso : (c :Cat) -> (a , b : obj c) -> ( t1 : terminal c a) -> (t2 : terminal c b) -> iso c a b
 terminal_iso c a b t1 t2 =  ( fst (t2 a) **( (fst (t1 b) ** (lemma2 c a t1 (comp c a b a (fst (t2 a)) (fst (t1 b))),    ?foo ) )))
-
 
 
 record Functor (X : (Cat,Cat)) where
@@ -179,15 +229,15 @@ functorCat: (X : (Cat,Cat)) -> Cat
 functorCat cs = MkCat (Functor cs)(\p => NatTrans cs (fst p) (snd p)) (natId cs)(natComp cs)(natCompId cs) (natAss cs)
 
 presheaves : (X : Cat) -> Cat
-presheaves c = functorCat (c, setOp)
+presheaves c = functorCat (op_cat c, Main.set)
 
--- the yoneda functor C_b -> Set^op,  a -> set_hom (a,b)
+-- the yoneda functor C_b: C^op -> Set,  a -> set_hom (a,b)
 
 yoneda_obj : (X : Cat) -> (b : obj X) -> (a : obj X) -> Type
 yoneda_obj c b a = hom c (a,b)
 
-yoneda_arr : (X : Cat ) -> (b : obj X) -> (x,y : obj X) -> ( f: hom X (x,y)) -> set_hom (yoneda_obj X b y, yoneda_obj X b x)
-yoneda_arr c b x y f = \g => comp c x y b f g
+yoneda_arr : (X : Cat ) -> (b : obj X) -> (x, y : obj X) -> ( f: hom X (y,x)) -> set_hom (yoneda_obj X b x, yoneda_obj X b y)
+yoneda_arr c b x y f = \g => comp c y x b f g
  
 pre_yoneda_id : (X : Cat ) -> ( b : obj X) -> ( x: obj X) -> (f : hom X (x,b)) ->
  (yoneda_arr X b x x (id X x)) f = set_id (yoneda_obj X b x) f
@@ -197,17 +247,121 @@ pre_yoneda_id c b x f = rewrite fst(id_ax c x b f) in Refl
 yoneda_id : (X : Cat) -> ( b : obj X) -> (x : obj X) -> (yoneda_arr X b x x (id X x))  = set_id (yoneda_obj X b x) 
 yoneda_id c b x = funExt (yoneda_obj c b x) (yoneda_obj c b x) (yoneda_arr c b x x (id c x)) (set_id (yoneda_obj c b x)) (pre_yoneda_id c b x)
 
-pre_yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (x,y)) -> (g: hom X (y,z)) -> (j : hom X (z,b)) ->
-  (yoneda_arr X b x z (comp X x y z f g)) j =  (set_comp (yoneda_obj X b z) (yoneda_obj X b y)(yoneda_obj X b x) (yoneda_arr X b y z g) (yoneda_arr X b x y f)) j
+pre_yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (y,x)) -> (g: hom X (z,y)) -> (j : hom X (x,b)) ->
+  (yoneda_arr X b x z (comp X z y x g f)) j =  (set_comp (yoneda_obj X b x) (yoneda_obj X b y)(yoneda_obj X b z)
+  (yoneda_arr X b x y f) (yoneda_arr X b y z g)) j
  
-pre_yoneda_comp c b x y z f g j = rewrite  (ass c x y z b f g j) in Refl
+pre_yoneda_comp c b x y z f g j = rewrite  (ass c z y x b g f j ) in Refl
 
-yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (x,y)) -> (g: hom X (y,z)) -> 
- (yoneda_arr X b x z (comp X x y z f g)) =  (set_comp (yoneda_obj X b z) (yoneda_obj X b y)(yoneda_obj X b x) (yoneda_arr X b y z g) (yoneda_arr X b x y f))
+yoneda_comp : (X :Cat) -> (b : obj X) -> (x,y,z : obj X) -> (f : hom X (y,x)) -> (g: hom X (z,y)) -> 
+ (yoneda_arr X b x z (comp X z y x  g f)) =  (set_comp (yoneda_obj X b x) (yoneda_obj X b y)(yoneda_obj X b z) (yoneda_arr X b x y f) (yoneda_arr X b y z g))
 
-yoneda_comp c b x y z f g = funExt (yoneda_obj c b z ) (yoneda_obj c b x ) (yoneda_arr c b x z (comp c x y z f g))  (set_comp (yoneda_obj c b z) (yoneda_obj c b y)(yoneda_obj c b x) (yoneda_arr c b y z g) (yoneda_arr c b x y f))(pre_yoneda_comp c b x y z f g)
+yoneda_comp c b x y z f g = funExt (yoneda_obj c b x ) (yoneda_obj c b z )
+ (yoneda_arr c b x z (comp c z y x g f))  (set_comp (yoneda_obj c b x) (yoneda_obj c b y)(yoneda_obj c b z)
+ (yoneda_arr c b x y f) (yoneda_arr c b y z g))(pre_yoneda_comp c b x y z f g)
 
-yoneda: (X : Cat) -> (b : obj X) -> Functor (X, Main.setOp)
-yoneda c b = MkFunctor (yoneda_obj c b) (yoneda_arr c b) (yoneda_id c b) (yoneda_comp c b)
+yoneda: (X : Cat) -> (b : obj X) -> Functor (op_cat X, Main.set)
+yoneda c b = MkFunctor (yoneda_obj c b) (yoneda_arr c b ) (yoneda_id c b) (yoneda_comp c b)
 
 -- this is part of the construction of the yoneda embedding y : C -> Psh(C) 
+
+arrow_yoneda: (X :Cat) -> ( a: obj X) -> ( b : obj X) -> ( f: hom X (a,b)) -> NatTrans (op_cat X, Main.set) (yoneda X a) (yoneda X b)
+
+-- (to be continued)
+
+-- diagrams, cones and limits
+
+delta: (X : (Cat,Cat))-> ( d : obj (snd X)) -> Functor X
+
+delta_obj : (X : (Cat,Cat)) -> (d : obj (snd X)) -> (obj (fst X)) -> (obj (snd X))
+delta_obj c d a = d
+
+delta_arr : (X : (Cat,Cat)) -> (d : obj (snd X)) ->
+ (x, y : obj (fst X)) -> (hom (fst X) (x,y)) -> (hom (snd X)(delta_obj X d x, delta_obj X d y))
+delta_arr c d x y f = id (snd c) d
+
+delta_id : (X : (Cat,Cat)) -> (d : obj (snd X)) -> ( a : obj (fst X)) -> delta_arr X d a a (id (fst X) a) = id (snd X)(delta_obj X d a)
+delta_id c d a = Refl
+
+delta_comp : (X : (Cat, Cat)) -> (d : obj (snd X)) -> (x,y,z : obj (fst X)) ->
+ (f : hom (fst X) (x,y)) -> (g : hom (fst X) (y,z)) ->
+ delta_arr X d x z (comp (fst X) x y z f g) = comp (snd X) (delta_obj X d x) (delta_obj X d y)(delta_obj X d z)(delta_arr X d x y f)(delta_arr X d y z g)
+delta_comp c d x y z f g = rewrite fst ( id_ax (snd c) d d (id (snd c) d) ) in Refl
+ 
+delta c d = MkFunctor (delta_obj c d) (delta_arr c d) (delta_id c d) (delta_comp c d)
+
+cone : (X : (Cat,Cat)) -> (F : Functor X) -> (d : obj (snd X)) -> Type
+cone c f d = NatTrans c (delta c d) f
+
+limit : (X : (Cat,Cat)) -> (F : Functor X) -> (d : obj (snd X) ) -> ( l: cone X F d) -> Type
+
+limit cs fu d l = (e : obj (snd cs)) -> (m : cone cs fu e) -> 
+ (n : NatTrans cs (delta cs e) (delta cs d) ** (natComp cs (delta cs e)(delta cs d) fu n l = m,
+ (t : NatTrans cs (delta cs e) (delta cs d)) -> (natComp cs (delta cs e)(delta cs d) fu t l = m) -> t = n) )
+ 
+-- Preliminaries for Adjunctions
+
+FunCompose : {X,Y,Z :Cat} -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> Functor (X,Z)
+
+FunCompose_obj : {X,Y,Z :Cat} -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (x : obj X) -> (obj Z)
+FunCompose_obj fu gu x = f_obj gu (f_obj fu x)
+
+FunCompose_arr : {X,Y,Z :Cat} -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (x,y : obj X) -> (f : hom X (x,y)) -> hom Z (FunCompose_obj F G x, FunCompose_obj F G y)
+FunCompose_arr fu gu x y f = arr gu (f_obj fu x) (f_obj fu y) (arr fu x y f)
+
+FunCompose_id : {X,Y,Z : Cat} -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (x : obj X) -> FunCompose_arr F G x x (id X x) = id Z (FunCompose_obj F G x) 
+FunCompose_id fu gu x =  rewrite (f_id fu x) in (rewrite (f_id gu (f_obj fu x)) in Refl)
+
+FunCompose_arr_ax : {X,Y,Z :Cat} -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (x,y,z : obj X) -> (f : hom X (x,y)) -> (g: hom X (y,z)) ->
+ FunCompose_arr F G x z (comp X x y z f g) = comp Z (FunCompose_obj F G x) (FunCompose_obj F G y) (FunCompose_obj F G z)(FunCompose_arr F G x y f)(FunCompose_arr F G y z g)
+
+FunCompose_arr_ax fu gu x y z f g = rewrite (f_comp fu x y z f g) in (rewrite f_comp gu (f_obj fu x)(f_obj fu y)(f_obj fu z) (arr fu x y f) (arr fu y z g) in Refl)
+
+FunCompose fu gu = MkFunctor (FunCompose_obj fu gu) (FunCompose_arr fu gu)(FunCompose_id fu gu)(FunCompose_arr_ax fu gu)
+
+FunctorId : (X :Cat) -> Functor (X,X)
+FunctorId c = MkFunctor (\x => x) (\x,y,f => f) (\x => Refl) (\x,y,z,f,g => Refl) 
+
+-- Whiskerings
+
+RightWhisker : {X,Y,Z :Cat} -> (F,G : Functor (X,Y)) -> (H: Functor (Y,Z)) -> (a : NatTrans (X,Y) F G) -> NatTrans(X,Z) (FunCompose F H) (FunCompose G H)
+
+RightWhisker_eta: {X,Y,Z :Cat} -> (F,G : Functor (X,Y)) -> (H: Functor (Y,Z)) -> (a : NatTrans (X,Y) F G) -> (x : obj X) -> 
+ hom Z ((f_obj (FunCompose F H) x), (f_obj (FunCompose G H) x))
+
+RightWhisker_eta fu gu hu a x = arr hu (f_obj fu x) (f_obj gu x) (eta a x)
+ 
+RightWhisker_com : {X,Y,Z :Cat} -> (F,G : Functor (X,Y)) -> (H: Functor (Y,Z)) -> (a : NatTrans (X,Y) F G) -> (x,y : obj X) -> (f : hom X (x,y))->
+ comp Z (FunCompose_obj F H x) (FunCompose_obj G H x) (FunCompose_obj G H y) (RightWhisker_eta F G H a x) (arr (FunCompose G H ) x y f)
+ = comp Z (FunCompose_obj F H x) (FunCompose_obj F H y) (FunCompose_obj G H y) (arr (FunCompose F H) x y f) (RightWhisker_eta F G H a y)
+
+RightWhisker_com fu gu hu a x y f = rewrite sym (f_comp hu (f_obj fu x) (f_obj gu x) (f_obj gu y)(eta a x)(arr gu x y f)) in (rewrite sym (f_comp hu (f_obj fu x) (f_obj fu y) (f_obj gu y) (arr fu x y f)(eta a y)) in (rewrite (com a x y f) in Refl ) )
+
+RightWhisker fu gu hu a = MkNatTrans (RightWhisker_eta fu gu hu a) (RightWhisker_com fu gu hu a)
+
+LeftWhisker : {Z, X, Y  : Cat} -> ( H : Functor (Z,X)) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) F G) -> NatTrans(Z,Y) (FunCompose H F) (FunCompose H G)
+
+LeftWhisker_eta : {Z,X,Y : Cat} ->  ( H : Functor (Z,X)) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) F G) -> (z : obj Z) -> 
+ hom Y ((f_obj (FunCompose H F) z), (f_obj (FunCompose H G) z))
+
+LeftWhisker_eta hu fu gu a z = eta a (f_obj hu z)
+
+LeftWhisker_com : {Z,X,Y :Cat} -> (H : Functor (Z,X)) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) F G) -> (y,z : obj Z) -> (f : hom Z (y,z))->
+ comp Y (FunCompose_obj H F y) (FunCompose_obj H G y) (FunCompose_obj H G z) (LeftWhisker_eta H F G a y) (arr (FunCompose H G ) y z f)
+ = comp Y (FunCompose_obj  H F y) (FunCompose_obj  H F z) (FunCompose_obj H G z) (arr (FunCompose H F ) y z f) (LeftWhisker_eta H F G a z)
+
+LeftWhisker_com hu fu gu a y z f = com a (f_obj hu y) (f_obj hu z) (arr hu y z f) 
+
+LeftWhisker hu fu gu a = MkNatTrans (LeftWhisker_eta hu fu gu a)(LeftWhisker_com hu fu gu a)
+
+-- Adjunctions
+
+record Adjunction (X, Y : Cat) (L: Functor (X,Y)) (R: Functor (Y,X)) where
+  constructor MkAdjunction
+  eta : NatTrans (X,X) (FunctorId X) (FunCompose L R) 
+  epsilon : NatTrans (Y,Y) (FunCompose R L) (FunctorId Y)
+--  triangle1:
+--  triangle2:
+
+
+
