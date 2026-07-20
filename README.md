@@ -2,9 +2,9 @@
 Investigations into the Idris2 proof assistant and some formalizations
 
  
-Id there a proof assistant which combines the best aspects of Coq/Rocq and Agda? We would like the construction of proof-terms be done in a natural deduction style, close to actual mathematical practice (at least for the proofs of category theory). This is different at once from the top-down method of constructing proofs in Coq/Rocq and from the emacs interface of Agda and its system of refinement, filling holes, etc.
+Is there a proof assistant which combines the best aspects of Coq/Rocq and Agda? We would like the construction of proof-terms be done in a natural deduction style, close to actual mathematical practice (at least for the proofs of category theory). This is different at once from the top-down method of constructing proofs in Coq/Rocq and from the emacs interface of Agda and its system of refinement, filling holes, etc.
 
-Dependent type theory - extensions of type theories such as used in Ocaml and Haskell - seem to us philosophically, computationally, logically and practically the best foundation for mathematics. The elegant Idris 2 proof assistant - which we could call an idealized version of Agda (but with linear types!) - seems to be  most promising. It is simple and versatile and can work with emacs, vim or nano. Could we use it as a basis to develop our natural deduction style interactive theorem proving?
+Dependent type theory - extensions of type theories such as used in Ocaml and Haskell - seems to us philosophically, computationally, logically and practically the best foundation for mathematics. The elegant Idris 2 proof assistant - which we could call an idealized version of Agda (but with linear types!) - seems to be  most promising. It is simple and versatile and can work with emacs, vim or nano. Could we use it as a basis to develop our natural deduction style interactive theorem proving?
 
 Idris 2 with its REPL in facy feel like a enhanced version of Ocaml or Haskell (upon which it is based) - but it is not so easy to install (we are running it on an Ubuntu virtual machine in whih we need rlwrap to get command history). 
 
