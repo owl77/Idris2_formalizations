@@ -4,8 +4,8 @@ import Prelude
 import Data.Singleton
 import Data.Fin
 
--- In this module we define general categories, opposite categories, the category of "sets", the emty, singleton and canonical category with two elements, terminal objects, functors and natural transformations, 
--- point out the necessity of extensionality to define the category of sets and the necessity of postulating natural identity conditions for
+-- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, terminal objects, functors and natural transformations, 
+-- point out the necessity of extensionality to define the category of sets and the need to postulate  identity conditions for
 -- natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define the composition of functors, the identity functors
 and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
