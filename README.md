@@ -6,7 +6,7 @@ Is there a proof assistant which combines the best aspects of Coq/Rocq and Agda?
 
 Dependent type theory - extensions of type theories such as used in Ocaml and Haskell - seems to us philosophically, computationally, logically and practically the best foundation for mathematics. The elegant Idris 2 proof assistant - which we could call an idealized version of Agda (but with linear types!) - seems to be  most promising. It is simple and versatile and can work with emacs, vim or nano. Could we use it as a basis to develop our natural deduction style interactive theorem proving?
 
-Idris 2 with its REPL in facy feel like a enhanced version of Ocaml or Haskell (upon which it is based) - but it is not so easy to install (we are running it on an Ubuntu virtual machine in whih we need rlwrap to get command history). 
+Idris 2 with its REPL in fact feel like a enhanced version of Ocaml or Haskell (upon which it is based) - but it is not so easy to install (we are running it on an Ubuntu virtual machine in whih we need rlwrap to get command history). 
 
 We can seemlessly formalize category theory in Idris 2 (it seems this can be done in a simpler and more direct way than in Coq/Rocq) - a fact which is already of logico-philosophical significance. 
 
