@@ -12,6 +12,8 @@ import Data.Fin
 
 -- We believe that Iris 2 is the best (and most efficient) dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
+-- Much of the formalization below could be rewritten using implicit arguments. 
+
 record Cat where
  constructor MkCat
  obj : Type
