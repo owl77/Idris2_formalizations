@@ -10,7 +10,7 @@ import Data.Fin
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define the composition of functors, the identity functors
 -- and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
 
--- We believe that Iris 2 is the best dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
+-- We believe that Iris 2 is the best (and most efficient) dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
 record Cat where
  constructor MkCat
