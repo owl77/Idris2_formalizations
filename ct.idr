@@ -4,12 +4,12 @@ import Prelude
 import Data.Singleton
 import Data.Fin
 
--- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, terminal objects, functors and natural transformations, 
--- point out the necessity of extensionality to define the category of sets and the need to postulate  identity conditions for
--- natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
+-- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, 
+-- terminal objects, functors and natural transformations, point out the necessity of extensionality to define the category of sets and the need to postulate 
+-- identity conditions for natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define ´diagonal functors, cones and limits. 
 -- And the composition of functors, the identity functors and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
-
+-- There are several interesting points regarding the coherence of natural transformation equality relative to functor identity (cf.  transport in Hott).
 -- We believe that Iris 2 is the best (and most efficient) dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
 -- Much of the formalization below could be rewritten using implicit arguments. 
@@ -34,6 +34,7 @@ empty_cat : Cat
 empty_cat = MkCat Void (\x => Void) (\x => x) (\x,y,z,f,g => absurd f) (\x,y,f => (absurd f, absurd f)) (\x,y,z,w,f,g,h => absurd f)
 
 -- singleton category
+
 star: Type
 star = Singleton 0
 
@@ -327,6 +328,32 @@ FunCompose fu gu = MkFunctor (FunCompose_obj fu gu) (FunCompose_arr fu gu)(FunCo
 FunctorId : (X :Cat) -> Functor (X,X)
 FunctorId c = MkFunctor (\x => x) (\x,y,f => f) (\x => Refl) (\x,y,z,f,g => Refl) 
 
+-- defining equality between functors is problematic. It is more natural to consider the framework of the category of categories 
+-- being a 2-category. There is a problem in defining the triangle identities further ahead in which we need strict equality for functor equality to apply rewrite so that the types of the 
+-- natural transformations match. This motivates the transport operation of homotopy type theory: for P : T -> Type if x, y : T with x = y and a : Tx then there is a canonical tr_x=y a : Ty
+
+FunctorEquals_obj : (X : (Cat,Cat)) -> (F,G : Functor X) -> Type 
+FunctorEquals_obj cs fu gu = (x: obj (fst cs)) -> f_obj fu x = f_obj gu x
+
+FunctorEquals_arr : (X : (Cat,Cat)) -> (F,G : Functor X) -> (FunctorEquals_obj X F G) ->  Type
+FunctorEquals_arr cs fu gu eq  = (x,y : obj (fst cs)) -> (f : hom (fst cs) (x,y)) -> (rewrite sym (eq x) in (rewrite sym (eq y) in  (arr fu x y f) ) )   = arr gu x y f
+
+FunctorEquals : (X : (Cat,Cat)) -> (F,G : Functor X) -> (o: FunctorEquals_obj X F G) -> (FunctorEquals_arr X F G o) -> F = G   
+
+fun_l : (X,Y : Cat) -> (F : Functor (X,Y)) -> FunCompose  (FunctorId X) F = F
+fun_r : (X,Y : Cat) -> (F : Functor (X,Y)) -> FunCompose F (FunctorId Y) =F
+fun_ass : (X,Y,Z,W : Cat) -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (H : Functor (Z,W)) -> FunCompose (FunCompose F G) H = FunCompose F (FunCompose G H)
+
+fun_l_obj : (X, Y : Cat) ->  (F: Functor (X,Y)) -> FunctorEquals_obj (X,Y)  (FunCompose  (FunctorId X) F) F 
+fun_l_obj xu yu fu = \x => Refl
+
+fun_l_arr : (X, Y : Cat) -> (F : Functor (X,Y)) -> (e : FunctorEquals_obj (X,Y) (FunCompose (FunctorId X) F) F) -> FunctorEquals_arr (X,Y)  (FunCompose  (FunctorId X) F) F e
+fun_l_arr xu yu fy e = \x,y,f => Refl
+
+fun_l xu yu fu = FunctorEquals (xu,yu) (FunCompose (FunctorId xu) fu) fu (fun_l_obj xu yu fu) (fun_l_arr xu yu fu (fun_l_obj xu yu fu))
+  
+-- and likewise for fun_r and fun_ass
+
 -- Whiskerings
 
 RightWhisker : {X,Y,Z :Cat} -> (F,G : Functor (X,Y)) -> (H: Functor (Y,Z)) -> (a : NatTrans (X,Y) F G) -> NatTrans(X,Z) (FunCompose F H) (FunCompose G H)
@@ -361,12 +388,40 @@ LeftWhisker hu fu gu a = MkNatTrans (LeftWhisker_eta hu fu gu a)(LeftWhisker_com
 
 -- Adjunctions
 
+
+coh1 : (X,Y : Cat) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) (FunCompose (FunctorId X) F) G) -> NatTrans (X,Y) F G
+coh1 c d fu gu a = rewrite sym (fun_l c d fu) in a
+
+coh2 : (X,Y : Cat) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) G (FunCompose F (FunctorId Y))) -> NatTrans (X,Y) G F
+coh2 c d fu gu a = rewrite  sym (fun_r c d fu) in a
+
+coh3 : (X,Y,Z,W : Cat) -> (A : Functor(X,W)) -> (F : Functor(X,Y)) -> (G : Functor(Y,Z)) -> (H : Functor(Z,W)) -> (a : NatTrans (X,W) A (FunCompose (FunCompose F G) H )) ->
+ NatTrans (X,W) A (FunCompose F (FunCompose G H))  
+
+coh3  c d f g au fu gu hu a = rewrite  sym (fun_ass c d f g fu gu hu) in a
+
+coh4 : (X,Y : Cat) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) (FunCompose F (FunctorId Y) ) G) -> NatTrans (X,Y) F G
+coh4 c d fu gu a = rewrite sym (fun_r c d fu) in a
+
+coh5 : (X,Y : Cat) -> (F,G : Functor (X,Y)) -> (a : NatTrans (X,Y) G (FunCompose (FunctorId X) F )) -> NatTrans (X,Y) G F
+coh5 c d fu gu a = rewrite  sym (fun_l c d fu) in a
+
+
+coh6 : (X,Y,Z,W : Cat) -> (A : Functor(X,W)) -> (F : Functor(X,Y)) -> (G : Functor(Y,Z)) -> (H : Functor(Z,W)) -> (a : NatTrans (X,W) A  (FunCompose F (FunCompose G H)  ) ) ->
+ NatTrans (X,W) A (FunCompose (FunCompose F G) H ) 
+
+coh6  c d f g au fu gu hu a = rewrite   (fun_ass c d f g fu gu hu) in a
+
+
+
 record Adjunction (X, Y : Cat) (L: Functor (X,Y)) (R: Functor (Y,X)) where
   constructor MkAdjunction
   eta : NatTrans (X,X) (FunctorId X) (FunCompose L R) 
-  epsilon : NatTrans (Y,Y) (FunCompose R L) (FunctorId Y)
---  triangle1:
---  triangle2:
-
-
+  epsilon : NatTrans (Y,Y) (FunCompose R L) (FunctorId Y) 
+  triangle1 : natComp (X,Y) L (FunCompose L (FunCompose R L)) L   ( (coh3 X Y X Y  L L R L)  
+      (coh1 X Y L (FunCompose (FunCompose L R) L)  (RightWhisker (FunctorId X) (FunCompose L R) L eta )   ) )
+   (coh2 X Y L (FunCompose L (FunCompose R L))  (LeftWhisker L (FunCompose R L) (FunctorId Y) epsilon)) = (natId (X,Y) L)
+  triangle2 :  natComp (Y,X) R (FunCompose (FunCompose R L) R ) R  ( (coh6 Y X Y X R R L R)
+      (coh4 Y X R (FunCompose R (FunCompose  L R) )   (LeftWhisker R (FunctorId X) (FunCompose L R) eta )   ) )
+   (coh5  Y X R  (FunCompose  (FunCompose R L ) R)   (RightWhisker  (FunCompose  R L) (FunctorId Y) R epsilon)) = (natId (Y,X) R)
 
