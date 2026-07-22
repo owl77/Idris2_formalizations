@@ -4,7 +4,7 @@ import Prelude
 import Data.Singleton
 import Data.Fin
 
--- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, 
+-- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, product categories 
 -- terminal objects, functors and natural transformations, point out the necessity of extensionality to define the category of sets and the need to postulate 
 -- identity conditions for natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define ´diagonal functors, cones and limits. 
@@ -119,6 +119,42 @@ set = MkCat Type set_hom set_id set_comp set_id_ax set_ass
 
 -- setOp : Cat
 -- setOp = op_cat set
+
+
+-- product categories
+
+catProd : (X,Y : Cat) -> Cat
+
+catProd_obj : (X, Y: Cat) -> Type
+catProd_obj xu yu = (obj xu, obj yu)
+
+catProd_hom : (X, Y: Cat) -> (q : ((obj X, obj Y), (obj X, obj Y))) -> Type
+catProd_hom xu yu q = (hom xu ( (fst (fst q)), (fst (snd q) ) ), hom yu ((snd (fst q)), (snd (snd q)) )      )
+
+catProd_id : (X,Y : Cat) -> (p : catProd_obj X Y) -> catProd_hom X Y (p,p)
+catProd_id xu yu p = (id xu (fst p), id yu (snd p))
+
+catProd_comp : (X, Y : Cat) -> (p,q,r : catProd_obj X Y) -> (f : catProd_hom X Y (p,q)) -> (g : catProd_hom X Y (q,r)) -> catProd_hom X Y (p,r)
+catProd_comp xu yu p q r f g = ( comp xu (fst p)(fst q)(fst r)(fst f)(fst g), comp yu (snd p)(snd q)(snd r)(snd f)(snd g))
+
+pairEq : {X,Y : Type} -> (x : (X,Y)) -> (fst x, snd x) = x
+pairEq (x,y) = Refl
+
+catProd_id_ax_l : (X, Y : Cat) -> (p,q : catProd_obj X Y) -> (f : catProd_hom X Y (p,q)) -> catProd_comp X Y p p q (catProd_id X Y p) f = f
+catProd_id_ax_l xu yu p q f = rewrite fst (id_ax xu (fst p) (fst q) (fst f)) in (rewrite fst (id_ax yu (snd p)(snd q) (snd f)) in 
+ rewrite (pairEq f  ) in Refl)
+
+catProd_id_ax_r : (X, Y : Cat) -> (p,q : catProd_obj X Y) -> (f : catProd_hom X Y (p,q)) -> catProd_comp X Y p q q f (catProd_id X Y q)  = f
+catProd_id_ax_r xu yu p q f = rewrite snd (id_ax xu (fst p) (fst q) (fst f)) in (rewrite snd (id_ax yu (snd p)(snd q) (snd f)) in
+ rewrite (pairEq f  ) in Refl)
+
+catProd_ass : (X, Y : Cat) -> (p,q,r,s : catProd_obj X Y ) -> (f : catProd_hom X Y (p,q)) -> (g : catProd_hom X Y (q,r)) -> ( h : catProd_hom X Y (r,s)) ->
+catProd_comp X Y p r s (catProd_comp X Y p q r f g) h = catProd_comp X Y p q s f (catProd_comp X Y q r s g h)
+
+catProd_ass xu yu p q r s f g h = rewrite ass xu (fst p) (fst q) (fst r) (fst s) (fst f) (fst g)(fst h) in (rewrite ass yu (snd p) (snd q)(snd r)(snd s) (snd f)(snd g)(snd h) in Refl )
+
+catProd xu yu = MkCat (catProd_obj xu yu) (catProd_hom xu yu)(catProd_id xu yu)(catProd_comp xu yu)(\p,q,f => (catProd_id_ax_l xu yu p q f, catProd_id_ax_r xu yu p q f))(catProd_ass xu yu)
+
 
 
 terminal : (c : Cat) -> (t : obj c) -> Type 
