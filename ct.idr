@@ -1,5 +1,4 @@
 
-
 import Prelude
 import Data.Singleton
 import Data.Fin
@@ -8,7 +7,7 @@ import Data.Fin
 -- terminal objects, functors and natural transformations, point out the necessity of extensionality to define the category of sets and the need to postulate 
 -- identity conditions for natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define ´diagonal functors, cones and limits. 
--- And the composition of functors, the identity functors and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
+-- And the composition of functors, the identity functors, the category of categories and the "whiskering operations" (Godement product) and use this to define adjunctions in terms of the triangle identities.
 -- There are several interesting points regarding the coherence of natural transformation equality relative to functor identity (cf.  transport in Hott).
 -- We believe that Iris 2 is the best (and most efficient) dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
@@ -389,6 +388,30 @@ fun_l_arr xu yu fy e = \x,y,f => Refl
 fun_l xu yu fu = FunctorEquals (xu,yu) (FunCompose (FunctorId xu) fu) fu (fun_l_obj xu yu fu) (fun_l_arr xu yu fu (fun_l_obj xu yu fu))
   
 -- and likewise for fun_r and fun_ass
+
+fun_r_obj : (X, Y : Cat) ->  (F: Functor (X,Y)) -> FunctorEquals_obj (X,Y)  (FunCompose F (FunctorId Y)) F
+fun_r_obj xu yu fu = \x => Refl
+fun_r_arr : (X, Y : Cat) -> (F : Functor (X,Y)) -> (e : FunctorEquals_obj (X,Y) (FunCompose F (FunctorId Y)) F) -> FunctorEquals_arr (X,Y)  (FunCompose F (FunctorId Y)) F e
+fun_r_arr xu yu fy e = \x,y,f => Refl
+
+fun_r xu yu fu = FunctorEquals (xu,yu) (FunCompose fu (FunctorId yu) ) fu (fun_l_obj xu yu fu) (fun_l_arr xu yu fu (fun_l_obj xu yu fu))
+
+
+fun_ass_obj : (X,Y,Z,W : Cat) -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (H : Functor (Z,W)) -> FunctorEquals_obj (X,W) (FunCompose (FunCompose F G) H) (FunCompose F (FunCompose G H))
+fun_ass_obj xu yu zu wu fu gu hu = \x => Refl
+
+fun_ass_arr : (X,Y,Z,W : Cat) -> (F : Functor (X,Y)) -> (G : Functor (Y,Z)) -> (H : Functor (Z,W)) -> ( o: FunctorEquals_obj (X,W) (FunCompose (FunCompose F G) H) (FunCompose F (FunCompose G H))) -> FunctorEquals_arr (X,W) (FunCompose (FunCompose F G) H) (FunCompose F (FunCompose G H)) o
+fun_ass_arr xu yu zu wu fu gu hu o = \x,y,f => Refl
+ 
+fun_ass xu yu zu wu fu gu hu = FunctorEquals (xu,wu) (FunCompose (FunCompose fu gu) hu) (FunCompose fu (FunCompose gu hu)) (fun_ass_obj xu yu zu wu fu gu hu) (fun_ass_arr xu yu zu wu fu gu hu (fun_ass_obj xu yu zu wu fu gu hu))
+
+
+-- The category of categories
+
+CatHom : (Cat,Cat) -> Type
+CatHom (xu,yu) = Functor (xu,yu)
+
+CAT = MkCat Cat CatHom (\x => FunctorId x)(\x,y,z,f,g => FunCompose f g) (\x,y,f => (fun_l x y f, fun_r x y f)) fun_ass
 
 -- Whiskerings
 
