@@ -3,7 +3,7 @@ import Prelude
 import Data.Singleton
 import Data.Fin
 
--- In this module we define general categories, opposite categories, the category of "sets", the empty, singleton and canonical category with two elements, product categories 
+-- In this module we define general categories, opposite categories, the category of "sets", the simplex category (work in progress) , the empty, singleton and canonical category with two elements, product categories 
 -- terminal objects, functors and natural transformations, point out the necessity of extensionality to define the category of sets and the need to postulate 
 -- identity conditions for natural transformations. We prove that functors between categories A and B and their natural transformations form a category.
 -- As a result we can define the category of presheaves over a given category A and the yoneda embedding. We define ´diagonal functors, cones and limits. 
@@ -12,6 +12,7 @@ import Data.Fin
 -- We believe that Iris 2 is the best (and most efficient) dependent-type based proof assistant for this task, once one understands how to use rewrite and Refl.
 
 -- Much of the formalization below could be rewritten using implicit arguments. 
+-- To do: Kan extensions, monoidal categories, simplicial sets. 
 
 record Cat where
  constructor MkCat
@@ -50,6 +51,27 @@ singleton_cat = MkCat (Singleton 0) (\x => (Singleton 1)) (\x => Val 1) (\x,y,z,
 -- data Fin : Nat -> Type where
 --   FZ : Fin (S k)
 --   FS : Fin k -> Fin (S k)
+
+FinLeq : (n : Nat) -> (a,b :Fin n) -> Bool
+FinLeq (S n) FZ x = True
+FinLeq (S n) (FS x) FZ  = False
+FinLeq (S n) (FS x) (FS y) = FinLeq n x y
+
+data FinLeq2 : (n : Nat) -> (a,b :Fin n) -> Type where
+     Fz: FinLeq2 (S n) FZ x
+     Fs : FinLeq2 n x y -> FinLeq2 (S n) (FS x) (FS y)
+
+record WeakOrder (n,m : Nat) where
+ constructor MkweakOp
+ func: Fin n -> Fin m 
+ weak: (x,y : Fin n) -> FinLeq m (func x) (func y) = True
+
+record WeakOrder2 (n,m : Nat) where
+ constructor MkweakOp2
+ func: Fin n -> Fin m 
+ weak: (x,y : Fin n) -> FinLeq2 m (func x) (func y)
+
+-- to be used to define the simplex category later on.
 
 two_hom: (Fin 2, Fin 2) -> Type
 
